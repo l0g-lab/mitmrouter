@@ -26,11 +26,11 @@ fi
 SCRIPT_RELATIVE_DIR=$(dirname "${BASH_SOURCE[0]}") 
 cd $SCRIPT_RELATIVE_DIR
 
-echo "== stop router services"
+echo "[*] stop router services"
 sudo killall wpa_supplicant
 sudo killall dnsmasq
 
-echo "== reset all network interfaces"
+echo "[*] reset all network interfaces"
 sudo ifconfig $LAN_IFACE 0.0.0.0
 sudo ifconfig $LAN_IFACE down
 sudo ifconfig $BR_IFACE 0.0.0.0
