@@ -26,11 +26,11 @@ fi
 SCRIPT_RELATIVE_DIR=$(dirname "${BASH_SOURCE[0]}") 
 cd $SCRIPT_RELATIVE_DIR
 
-echo "== stop router services"
+echo "[*] stop router services"
 sudo killall wpa_supplicant
 sudo killall dnsmasq
 
-echo "== reset all network interfaces"
+echo "[*] reset all network interfaces"
 sudo ifconfig $LAN_IFACE 0.0.0.0
 sudo ifconfig $LAN_IFACE down
 sudo ifconfig $BR_IFACE 0.0.0.0
@@ -41,7 +41,7 @@ sudo brctl delbr $BR_IFACE
 
 if [ $1 = "up" ]; then
 
-    echo "== create dnsmasq config file"
+    echo "[*] create dnsmasq config file"
     echo "interface=${BR_IFACE}" > $DNSMASQ_CONF
     echo "dhcp-range=${LAN_DHCP_START},${LAN_DHCP_END},${LAN_SUBNET},12h" >> $DNSMASQ_CONF
     echo "dhcp-option=6,${LAN_DNS_SERVER}" >> $DNSMASQ_CONF
@@ -60,7 +60,7 @@ if [ $1 = "up" ]; then
     echo "ieee80211n=1" >> $HOSTAPD_CONF
     #echo "ieee80211w=1" >> $HOSTAPD_CONF # PMF
     
-    echo "== bring up interfaces and bridge"
+    echo "[*] bring up interfaces and bridge"
     sudo ifconfig $WIFI_IFACE up
     sudo ifconfig $WAN_IFACE up
     sudo ifconfig $LAN_IFACE up
@@ -68,7 +68,7 @@ if [ $1 = "up" ]; then
     sudo brctl addif $BR_IFACE $LAN_IFACE
     sudo ifconfig $BR_IFACE up
     
-    echo "== setup iptables"
+    echo "[*] setup iptables"
     sudo iptables --flush
     sudo iptables -t nat --flush
     sudo iptables -t nat -A POSTROUTING -o $WAN_IFACE -j MASQUERADE
@@ -78,13 +78,12 @@ if [ $1 = "up" ]; then
     #sudo iptables -t nat -A PREROUTING -i $BR_IFACE -p tcp -d 1.2.3.4 --dport 443 -j REDIRECT --to-ports 8081
     
     
-    echo "== setting static IP on bridge interface"
-    sudo ifconfig br0 inet $LAN_IP netmask $LAN_SUBNET
+    echo "[*] setting static IP on bridge interface"
+    sudo ifconfig $BR_IFACE inet $LAN_IP netmask $LAN_SUBNET
     
-    echo "== starting dnsmasq"
+    echo "[*] starting dnsmasq"
     sudo dnsmasq -C $DNSMASQ_CONF
     
-    echo "== starting hostapd"
+    echo "[*] starting hostapd"
     sudo hostapd $HOSTAPD_CONF
 fi
-
