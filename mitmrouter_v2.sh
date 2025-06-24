@@ -78,10 +78,12 @@ cleanup() {
         log "[*] Cleaning up interfaces and IP assignments"
         sudo ip link set dev $IN_INTERFACE down
         sudo ip addr flush dev $IN_INTERFACE
-        sudo ip link set $BR_IFACE down
-        sudo ip addr flush dev $BR_IFACE
-        sudo brctl delbr $BR_IFACE
-    
+
+        # Bridge Stuff
+        #sudo ip link set $BR_IFACE down
+        #sudo ip addr flush dev $BR_IFACE
+        #sudo brctl delbr $BR_IFACE
+
         log "[*] Stopping dhcpd"
         sudo systemctl stop isc-dhcp-server
         
@@ -109,15 +111,21 @@ clean_setup_ip() {
         # Clean
         sudo ip link set $IN_INTERFACE down
         sudo ip addr flush dev $IN_INTERFACE
-        sudo ip link set $BR_IFACE down
-        sudo ip addr flush dev $BR_IFACE
-        sudo brctl delbr $BR_IFACE
+
+        # Bridge Stuff
+        #sudo ip link set $BR_IFACE down
+        #sudo ip addr flush dev $BR_IFACE
+        #sudo brctl delbr $BR_IFACE
+
         # Setup
         sudo ip link set dev $IN_INTERFACE up
-        sudo brctl addbr $BR_IFACE
-        sudo brctl addbif $BR_IFACE $IN_INTERFACE
-        sudo ip link set $BR_IFACE up
-        sudo ip addr add $LAN_IP/24 dev $BR_IFACE
+        sudo ip addr add $LAN_IP/24 dev $IN_INTERFACE
+
+        # Bridge Stuff
+        #sudo brctl addbr $BR_IFACE
+        #sudo brctl addbif $BR_IFACE $IN_INTERFACE
+        #sudo ip link set $BR_IFACE up
+        #sudo ip addr add $LAN_IP/24 dev $BR_IFACE
     fi
 }
 
@@ -138,7 +146,8 @@ build_run_dhcpd() {
     sudo cp /etc/dhcp/dhcpd.conf /etc/dhcp/dhcpd.conf.bak
     sudo cp $DHCPD_CONF /etc/dhcp/dhcpd.conf
     sudo sed -i "/INTERFACESv4/ s/.*/INTERFACESv4=$IN_INTERFACE/" /etc/default/isc-dhcp-server
-    
+
+    # Stop and start dhcpd
     log "[*] Running dhcp server now...."
     sudo systemctl stop isc-dhcp-server
     sudo systemctl start isc-dhcp-server
@@ -170,7 +179,7 @@ if [ -z "$1" ]; then
     usage
 fi
 
-if [[ "$1" == 'ap' ]] && [[ "$2" == wl* ]] && ([[ "$3" == et* ]] || [[ "$3" == wl* ]]); then
+if [[ "$1" == 'ap' ]] && [[ "$2" == wl* ]] && ([[ "$3" == e* ]] || [[ "$3" == wl* ]]); then
     # Wireless Setup
     WIFI_INTERFACE=$2
     GATEWAY_INTERFACE=$3
@@ -209,11 +218,12 @@ if [[ "$1" == 'ap' ]] && [[ "$2" == wl* ]] && ([[ "$3" == et* ]] || [[ "$3" == w
     # Cleanup
     cleanup wireless $WIFI_INTERFACE
 
-elif [[ "$1" == 'wired' ]] && [[ "$2" == et* ]] && ([[ "$3" == et* ]] || [[ "$3" == wl* ]]); then
+elif [[ "$1" == 'wired' ]] && [[ "$2" == e* ]] && ([[ "$3" == e* ]] || [[ "$3" == wl* ]]); then
     # Wired Setup
-    DHCPD_CONF="tmp_dhcpd.conf"
     IN_INTERFACE=$2
     GATEWAY_INTERFACE=$3
+
+    trap cleanup SIGINT
 
     log "[*] mitmrouter_v2 - WIRED mode starting"
 
@@ -221,7 +231,7 @@ elif [[ "$1" == 'wired' ]] && [[ "$2" == et* ]] && ([[ "$3" == et* ]] || [[ "$3"
     clean_setup_ip wired $IN_INTERFACE
 
     log "[*] Building dhcpd config"
-    build_run_dhcpd_config
+    build_run_dhcpd $IN_INTERFACE
 
     log "[*] Adding firewall rules"
     clean_setup_firewall $IN_INTERFACE $GATEWAY_INTERFACE
@@ -229,6 +239,10 @@ elif [[ "$1" == 'wired' ]] && [[ "$2" == et* ]] && ([[ "$3" == et* ]] || [[ "$3"
     log "[*] Setting up forwarding"
     setup_forwarding
 
+    # Keep the program open
+    sleep infinity
+
+    # Cleanup
     cleanup wired $IN_INTERFACE
 
 else
