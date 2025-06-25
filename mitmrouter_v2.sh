@@ -164,6 +164,9 @@ clean_setup_firewall() {
     sudo iptables -t nat -A POSTROUTING -o $out_interface -j MASQUERADE
     sudo iptables -A FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
     sudo iptables -A FORWARD -i $in_interface -o $out_interface -j ACCEPT
+
+    # option additional mitm rules
+    #sudo iptables -t nat -A PREROUTING -i $in_interface -p tcp -d 1.2.3.4 --dport 443 -j REDIRECT --to-ports 8080
 }
 
 # Configuring OS to be a router
