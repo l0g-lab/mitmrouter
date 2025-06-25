@@ -4,7 +4,40 @@ Bash script to automate setup of Linux router - useful for IoT device traffic an
 
 This is based on [mitmrouter](https://github.com/nmatt0/mitmrouter) from Matt Brown (https://github.com/nmatt0)
 
-![Arch](./img/arch.jpg)
+```mermaid
+flowchart LR
+    iot1["Wifi IoT Device"]:::iotDevice
+    iot2["Wired IoT Device"]:::iotDevice
+    wifi["Wi-Fi Interface (hostapd)"]
+    eth["Ethernet Interface"]
+    dhcpd["dhcpd (dhcp server)"]
+    iptables["iptables rules"]
+    wan["wan"]
+    ethif["Ethernet Interface (WAN)"]
+    wlanif["Wifi Interface (WAN)"]
+
+    subgraph Linux_Router[MITM Router]
+        style Linux_Router fill:#005500
+        dhcpd
+        iptables
+        mitm:::mitm
+        wan
+    end
+
+    iot1 <--> wifi
+    iot2 <--> eth
+    dhcpd <--> wifi
+    dhcpd <--> eth
+    wifi <--> iptables
+    eth <--> iptables
+    iptables --> mitm
+    iptables <--> wan
+    wan <--> ethif
+    wan <--> wlanif
+
+    classDef iotDevice fill:#9966ff
+    classDef mitm fill:#ffdddd,color:#000
+```
 
 ## Dependencies
 <b>This was built on Debian 12. Some config locations may differ for other linux based OS's</b>
